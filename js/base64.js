@@ -1,5 +1,5 @@
-/* ====================================================================
- * Copyright (c) 2016 - 2019 The GmSSL Project.  All rights reserved.
+/*
+ * Copyright (c) 2014 - 2020 The GmSSL Project.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -44,29 +44,68 @@
  * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
- * ====================================================================
  */
 
 
-#ifndef NPAPI_PLUGINOBJECT_H
-#define NPAPI_PLUGINOBJECT_H
+const BASE64_MAP = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
 
-#include "GmSSLObject.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-typedef struct PluginObject {
-	NPObject header;
-	NPP npp;
-	GmSSLObject *gmsslObject;
-} PluginObject;
-
-NPClass *getPluginClass(void);
-
-#ifdef __cplusplus
+function base64_encode(bytes) {
+	var i = 0; j = 0;
+	var append = bytes.length % 3 > 0 ? 3 - bytes.length % 3 : 0;
+	for (i = 0; i < append; i++) {
+		bytes[bytes.length] = 0;
+	}
+	var b64 = "";
+	for (i = 0; j < bytes.length; j += 3) {
+		if (j > 0 && j % 57 == 0) {
+			b64 += '\n';
+		}
+		b64 += BASE64_MAP[bytes[j] >> 2]
+			+ BASE64_MAP[(bytes[j] & 3) << 4 | bytes[j+1] >> 4]
+			+ BASE64_MAP[(bytes[j+1] & 15) << 2 | bytes[j+2] >> 6]
+			+ BASE64_MAP[bytes[j+2] & 63];
+	}
+	for (i = 0; i < append; i++) {
+		b64 += '=';
+	}
+	return b64;
 }
-#endif
-#endif
 
+function base64_decode(input) {
+	var i = 0, j = 0;
+	input = input.replace(/[^A-Za-z0-9\+\/\=]/g, "");
+	var append = input.length % 4;
+	if (append > 2) {
+		return null;
+	}
+	for (i = 0; i < append; i++) {
+		if (input.charAt(input.length - i - 1) != '=') {
+			return null;
+		}
+	}
+	var output = new Array((input.length - append) * 3 / 4);
+	var enc1, enc2, enc3, enc4;
+	for (i = 0, j = 0; j < output.length;) {
+		enc1 = BASE64_MAP.indexOf(input.charAt(i++));
+		enc2 = BASE64_MAP.indexOf(input.charAt(i++));
+		enc3 = BASE64_MAP.indexOf(input.charAt(i++));
+		enc4 = BASE64_MAP.indexOf(input.charAt(i++));
+		output[j++] = (enc1 << 2) | (enc2 >> 4);
+		output[j++] = ((enc2 & 15) << 4) | (enc3 >> 2);
+		output[j++] = ((enc3 & 3) << 6) | enc4;
+	}
+	for (i = 0; i < append; i++) {
+		if (output.pop() != 0) {
+			return null;
+		}
+	}
+	return output;
+}
+
+function base64_test() {
+	var bin = [1, 2, 3, 4, 5];
+	var b64 = base64_encode(bin);
+	var buf = base64_decode(b64);
+	console.log(b64);
+	console.log(buf);
+}

@@ -6,6 +6,10 @@
 
 GmSSL is an open source cryptographic toolkit that provide first level support of Chinese national cryptographic algorithms and protocols which are specified in the GM/T serial standards. As a branch of the OpenSSL project, GmSSL provides API level compatibility with OpenSSL and maintains all the functionalities. Existing projects such as Apache web server can be easily ported to GmSSL with minor modification and a simple rebuild. Since the first release in late 2014, GmSSL has been selected as one of the six recommended cryptographic projects by Open Source China and the winner of the 2015 Chinese Linux Software Award.
 
+## Recent
+
+- The development of the new version of GmSSL (version 3.0)  has been completed and now released in the [develop](https://github.com/guanzhi/GmSSL/tree/develop) branch. It is expected to switch to the new version of GmSSL in April.
+
 ## Features
 
  - Support [Chinese GM/T cryptographic standards](http://gmssl.org/docs/standards.html).
@@ -63,7 +67,7 @@ GM/T 0024-2014 Ciphersuites:
  9. {0xe0,0x15} GMTLS_SM9DHE_SM9SIGN_WITH_SMS4_SM3
 10. {0xe0,0x17} GMTLS_SM9ENC_WITH_SMS4_SM3
 11. {0xe0,0x19} GMTLS_RSA_WITH_SMS4_SM3
-12. {0xe0,0x1a} GMTLS_RSA_WITH_SMS4_SM3
+12. {0xe0,0x1a} GMTLS_RSA_WITH_SMS4_SHA1
 ```
 
 GmSSL supports the standard TLS 1.2 protocol with SM2/SM3/SM4 ciphersuites and the GM/T SSL VPN protocol and ciphersuites. Currently the following ciphersuites are supported:
@@ -122,11 +126,13 @@ $ gmssl sms4 -in README.md -out README.sms4
 $ gmssl sms4 -d -in README.sms4
 ```
 
-ZUC encryption and decryption:
+ZUC/ZUC256 encryption and decryption:
 
 ```sh
 $ gmssl zuc -in README.md -out README.zuc
 $ gmssl zuc -d -in README.zuc
+$ gmssl zuc256 -in README.md -out README.zuc256
+$ gmssl zuc256 -d -in README.zuc256
 ```
 
 SM2 private key generation:

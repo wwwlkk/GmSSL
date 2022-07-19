@@ -1,5 +1,5 @@
 /* ====================================================================
- * Copyright (c) 2015 - 2018 The GmSSL Project.  All rights reserved.
+ * Copyright (c) 2015 - 2019 The GmSSL Project.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -56,12 +56,9 @@
 # include <stdlib.h>
 # include <openssl/e_os2.h>
 
-# define ZUC_IV_LENGTH	16
-# define ZUC_KEY_LENGTH	16
-# define ZUC256_KEY_LENGTH 32
-
-typedef uint32_t ZUC_UINT1;
+typedef uint32_t ZUC_BIT;
 typedef uint32_t ZUC_UINT5;
+typedef uint8_t  ZUC_UINT6;
 typedef uint32_t ZUC_UINT15;
 typedef uint32_t ZUC_UINT31;
 typedef uint32_t ZUC_UINT32;
@@ -71,20 +68,72 @@ extern "C" {
 # endif
 
 
-typedef struct zuc_key_st {
+# define ZUC_KEY_LENGTH	16
+# define ZUC_IV_LENGTH	16
+# define ZUC_MAC_LENGTH 4
+
+
+typedef struct ZUC_KEY_st {
 	ZUC_UINT31 LFSR[16];
-	uint32_t R1;
-	uint32_t R2;
+	ZUC_UINT32 R1;
+	ZUC_UINT32 R2;
 } ZUC_KEY;
 
+void ZUC_set_key(ZUC_KEY *key, const unsigned char user_key[16], const unsigned char iv[16]);
+void ZUC_generate_keystream(ZUC_KEY *key, size_t nwords, ZUC_UINT32 *words);
+ZUC_UINT32 ZUC_generate_keyword(ZUC_KEY *key);
 
-void ZUC_set_key(ZUC_KEY *key, const unsigned char *user_key, const unsigned char *iv);
-void ZUC_generate_keystream(ZUC_KEY *key, size_t nwords, uint32_t *words);
-uint32_t ZUC_generate_keyword(ZUC_KEY *key);
+typedef struct ZUC_MAC_CTX_st {
+	ZUC_UINT31 LFSR[16];
+	ZUC_UINT32 R1;
+	ZUC_UINT32 R2;
+	ZUC_UINT32 T;
+	ZUC_UINT32 K0;
+	unsigned char buf[4];
+	int buflen;
+} ZUC_MAC_CTX;
 
-void ZUC256_set_key(ZUC_KEY *key, const unsigned char *K, const unsigned char *IV);
-int ZUC256_set_mac_key(ZUC_KEY *key, const unsigned char *K, const unsigned char *IV,
-	int macbits /* macbits in {32, 64, 128} */);
+void ZUC_MAC_init(ZUC_MAC_CTX *ctx, const unsigned char key[16], const unsigned char iv[16]);
+void ZUC_MAC_update(ZUC_MAC_CTX *ctx, const unsigned char *data, size_t len);
+void ZUC_MAC_final(ZUC_MAC_CTX *ctx, const unsigned char *data, size_t nbits, unsigned char mac[4]);
+
+void ZUC_eea_encrypt(const ZUC_UINT32 *in, ZUC_UINT32 *out, size_t nbits,
+	const unsigned char key[16], ZUC_UINT32 count, ZUC_UINT5 bearer,
+	ZUC_BIT direction);
+ZUC_UINT32 ZUC_eia_generate_mac(const ZUC_UINT32 *data, size_t nbits,
+	const unsigned char user_key[16], ZUC_UINT32 count, ZUC_UINT5 bearer,
+	ZUC_BIT direction);
+
+# define ZUC256_KEY_LENGTH	32
+# define ZUC256_IV_LENGTH	23
+# define ZUC256_MAC32_LENGTH	4
+# define ZUC256_MAC64_LENGTH	8
+# define ZUC256_MAC128_LENGTH	16
+# define ZUC256_MIN_MAC_LENGTH	ZUC256_MAC32_LENGTH
+# define ZUC256_MAX_MAC_LENGTH	ZUC256_MAC128_LENGTH
+
+typedef ZUC_KEY ZUC256_KEY;
+
+void ZUC256_set_key(ZUC256_KEY *key, const unsigned char user_key[32],
+	const unsigned char iv[23]);
+#define ZUC256_generate_keystream(k,n,out)	ZUC_generate_keystream(k,n,out)
+#define ZUC256_generate_keyword(k)		ZUC_generate_keyword(k)
+
+typedef struct ZUC256_MAC_CTX_st {
+	ZUC_UINT31 LFSR[16];
+	ZUC_UINT32 R1;
+	ZUC_UINT32 R2;
+	ZUC_UINT32 T[4];
+	ZUC_UINT32 K0[4];
+	unsigned char buf[4];
+	int buflen;
+	int macbits;
+} ZUC256_MAC_CTX;
+
+void ZUC256_MAC_init(ZUC256_MAC_CTX *ctx, const unsigned char key[32], const unsigned char iv[23], int macbits);
+void ZUC256_MAC_update(ZUC256_MAC_CTX *ctx, const unsigned char *data, size_t len);
+void ZUC256_MAC_final(ZUC256_MAC_CTX *ctx, const unsigned char *data, size_t nbits, unsigned char *mac);
+
 
 # ifdef __cplusplus
 }
